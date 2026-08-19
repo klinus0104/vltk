@@ -64,6 +64,3 @@ the existing runtime; this repository replaces PaySys and S3Relay only.
 
 - [GUIDE.md](GUIDE.md): build, configuration, startup, healthchecks, testing, and troubleshooting.
 - [docs/OPERATIONS.md](docs/OPERATIONS.md): operations, rollback, and fixtures.
-- [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md): Gate status.
-- [WORKLOG.md](WORKLOG.md): current cross-session project summary.
-- [TRACE.md](TRACE.md): detailed reverse-engineering notes.
