@@ -1,0 +1,113 @@
+services:
+  s3relay_ref:
+    build:
+      context: .
+      dockerfile: docker/s3relay-reference/Dockerfile
+    platform: linux/amd64
+    container_name: jx_s3relay_cpp
+    environment:
+      CAPTURE_DIR: "/captures"
+      MSSQL_TARGET: "mssql:1433"
+      S3RELAY_IMPL: "cpp"
+    volumes:
+      - ./:/work:ro
+      - ./captures:/captures
+    ports:
+      - "5003:5003"
+    networks:
+      default: {}
+      gateway_lan:
+        ipv4_address: 10.211.55.4
+    mem_limit: 1g
+    memswap_limit: 1g
+    healthcheck:
+      test: ["CMD", "python3", "/work/scripts/service-healthcheck.py", "relay", "--port", "5003"]
+      interval: 5s
+      timeout: 2s
+      retries: 36
+      start_period: 10s
+    restart: unless-stopped
+
+  paysys:
+    build:
+      context: .
+      dockerfile: docker/paysys-reference/Dockerfile
+    platform: linux/amd64
+    container_name: jx_paysys_cpp
+    environment:
+      MSSQL_TARGET: "mssql:1433"
+      CAPTURE_DIR: "/captures"
+      PAY_SYS_IMPL: "cpp"
+    volumes:
+      - ./:/work:ro
+      - ./captures:/captures
+    ports:
+      - "5002:5002"
+    mem_limit: 1g
+    memswap_limit: 1g
+    healthcheck:
+      test: ["CMD", "python3", "/work/scripts/service-healthcheck.py", "paysys", "--port", "5002"]
+      interval: 5s
+      timeout: 2s
+      retries: 36
+      start_period: 10s
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./docker/gateway
+      dockerfile: Dockerfile
+    platform: linux/386
+    container_name: jx_gateway
+    working_dir: /home/jxser/gateway
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PAY_SYS_TARGET: "paysys:5002"
+      # Use the fixed gateway_lan address so C++ Relay's native peer-IP
+      # verification sees the same 10.211.55.2 identity as the original path.
+      S3RELAY_TARGET: "${S3RELAY_TARGET:-10.211.55.4:5003}"
+      MYSQL_TARGET: "mysql57:3306"
+      PATCH_ELF_BSS: "0"
+      RUN_GODDESS: "1"
+      RUN_BISHOP: "1"
+      RUN_S3RELAY: "1"
+      RUN_GAME: "1"
+      GAME_PUBLIC_IP: "10.211.55.2"
+      GAME_PORT: "6666"
+      CAPTURE_DIR: "/captures"
+      TRACE_GODDESS_KICK: "1"
+      TRACE_BISHOP_KICK: "1"
+      TRACE_GAME_KICK: "1"
+    depends_on:
+      s3relay_ref:
+        condition: service_healthy
+      paysys:
+        condition: service_healthy
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    mem_limit: 4g
+    memswap_limit: 4g
+    volumes:
+      - ./gateway-6.0:/home/jxser/gateway
+      - ./server1:/home/jxser/server1
+      - ./captures:/captures
+    ports:
+      - "5001:5001"
+      - "5622:5622"
+      - "5623:5623"
+      - "5632:5632"
+      - "6666:6666"
+    networks:
+      default: {}
+      gateway_lan:
+        ipv4_address: 10.211.55.2
+    restart: unless-stopped
+
+networks:
+  gateway_lan:
+    ipam:
+      config:
+        - subnet: 10.211.55.0/24

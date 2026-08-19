@@ -1,0 +1,73 @@
+.idea
+/windows/
+/webpanel/
+.DS_Store
+**/build/
+**/cmake-build-debug/
+**/logs/
+*.o
+*.d
+
+# GitNexus local index
+.gitnexus/
+
+# Build outputs
+build/
+cmake-build-*/
+out/
+dist/
+bin/
+obj/
+Debug/
+Release/
+
+# Compiled objects and libraries
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.lib
+*.dylib
+*.pdb
+
+# Original executables and binary references
+*.exe
+*.bin
+*.elf
+*.dump
+*.core
+
+# Reverse-engineering databases
+*.i64
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
+*.idb
+*.ghidra
+*.gzf
+*.bndb
+
+# Decompiled/generated bulk output
+reference/ghidra/
+reference/ida/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+.claude
+systemd
+dockerdata
+AGENTS.md
+CLAUDE.md
+bishop_probe
+TRACE.md
+dockerdata/*
+IMPLEMENTATION_PLAN.md
+WORKLOG.md
+tests
+scripts

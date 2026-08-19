@@ -1,0 +1,1 @@
+Là thư mục chứa file jx_linux_y bác vinhtn đã share 
