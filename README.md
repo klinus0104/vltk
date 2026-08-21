@@ -20,6 +20,22 @@ Gateway ──► MySQL :3306
 GameServer/Goddess/Bishop remain part of the existing Gateway runtime.
 ```
 
+```mermaid
+flowchart LR
+    Client[Game client] --> Gateway[Gateway / Bishop]
+    Gateway --> PaySys[PaySys :5002]
+    Gateway --> Relay[S3Relay :5003]
+    Relay --> MSSQL[(MSSQL)]
+    PaySys --> MSSQL
+    Gateway --> MySQL[(MySQL)]
+    GM[GM tool] --> APIGW[JX1 API Gateway :8080]
+    APIGW --> MSSQL
+    APIGW -. realtime kick/block .-> Relay
+```
+
+The public runtime combines the native PaySys/Relay replacements with the
+optional JX1 API Gateway submodule for GM administration and player APIs.
+
 The default Compose topology includes MySQL, MSSQL, C++ PaySys, C++ S3Relay,
 and Gateway. The Windows/Wine Relay reference service is profile-gated and is
 used for differential comparison only.

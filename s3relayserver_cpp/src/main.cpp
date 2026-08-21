@@ -774,12 +774,9 @@ bool handle_windows_gateway_info(Client& client,
     if (!require_windows_verify(client, body, table, "c2s_gatewayinfo",
                                 state.relay_store->backend_name() == std::string("mssql"))) return true;
 
-    if (state.relay_store->backend_name() == std::string("mssql")) {
-        if (body.size() != 0x32 || read_u16(body, 2) != 0x30 ||
-            read_u16(body, 4) != 1 || read_u16(body, 6) != 7) {
-            std::cerr << "#" << client.id << " windows opcode 0x26 invalid len/subtype\n";
-            return true;
-        }
+    if (state.relay_store->backend_name() == std::string("mssql") &&
+        body.size() == 0x32 && read_u16(body, 2) == 0x30 &&
+        read_u16(body, 4) == 1 && read_u16(body, 6) == 7) {
         const std::string name = fixed_ascii(body, 0x0c, 32);
         const std::uint16_t action = read_u16(body, 0x2c);
         std::uint32_t result = 0;
@@ -873,6 +870,21 @@ bool handle_windows_gateway_info(Client& client,
         case 7:
             action_name = "kickout_account";
             ok = state.relay_store->kickout_account(account);
+            if (ok) {
+                // Realtime enforcement: close the verified client session as
+                // soon as the management command succeeds. The DB flag alone
+                // only prevents the next login and leaves the current socket
+                // alive.
+                for (auto& [candidate_fd, candidate] : clients) {
+                    if (candidate_fd != client.fd && candidate.verified &&
+                        candidate.account == account) {
+                        candidate.close_after_write = true;
+                        std::cerr << "#" << client.id
+                                  << " realtime kick queued fd=" << candidate_fd
+                                  << " acc='" << account << "'\n";
+                    }
+                }
+            }
             break;
         default:
             action_name = "passthrough";
