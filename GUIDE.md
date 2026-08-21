@@ -29,6 +29,58 @@ docker compose -f docker-compose.yml \
 The default ports are MySQL `3306`, MSSQL `1433`, PaySys `5002`, Relay `5003`,
 and Gateway `5001`, `5622`, `5623`, `5632`, and `6666`.
 
+## Start the complete stack with JX1 API Gateway
+
+The public repository includes `jx1-api-gateway` as a Git submodule. Initialize
+it after cloning:
+
+```bash
+git submodule update --init --recursive
+```
+
+Run the complete stack with all three Compose files:
+
+```bash
+GM_API_JWT_SECRET='replace-with-a-long-random-secret' \
+GM_API_MSSQL_URL='sqlserver://sa:password@mssql:1433?database=account_tong&encrypt=disable' \
+GM_API_HEAVEN_PASSWORD='replace-with-heaven-password' \
+docker compose -f docker-compose.yml -f docker-compose.gateway.yml \
+  -f docker-compose.api-gateway.yml up -d --build
+```
+
+The resulting services are `mysql57`, `mssql`, `paysys`, `s3relay_ref`,
+`gateway`, and `api-gateway`. The API is exposed on port `8080`; Swagger is
+available at `http://localhost:8080/docs` and health is available at
+`http://localhost:8080/healthz`.
+
+The gateway container runs Cobra `web-service start`, waits for healthy
+dependencies, applies the embedded MSSQL schema, and starts Fiber. Never
+commit real values for JWT, MSSQL, or Heaven credentials.
+
+Validate the merged configuration before starting:
+
+```bash
+GM_API_JWT_SECRET=test-secret \
+GM_API_MSSQL_URL='sqlserver://sa:replace@mssql:1433?database=account_tong&encrypt=disable' \
+GM_API_HEAVEN_PASSWORD=test \
+docker compose -f docker-compose.yml -f docker-compose.gateway.yml \
+  -f docker-compose.api-gateway.yml config
+```
+
+If the external network is missing on a new host:
+
+```bash
+docker network create --driver bridge --subnet 10.211.55.0/24 vltk_pay_gateway_lan
+```
+
+To update the gateway submodule:
+
+```bash
+git -C jx1-api-gateway pull origin main
+git add jx1-api-gateway
+git commit -m "Update jx1-api-gateway submodule"
+```
+
 Gateway normally reaches Relay through `10.211.55.4:5003`, allowing native Relay
 peer validation to observe the expected Gateway identity. Override it for a
 special topology with `S3RELAY_TARGET`.

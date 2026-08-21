@@ -1,0 +1,52 @@
+services:
+  api-gateway:
+    build:
+      context: ./jx1-api-gateway
+      dockerfile: Dockerfile
+    container_name: jx_api_gateway
+    environment:
+      PORT: "8080"
+      ENV: "${GM_API_ENV:-production}"
+      SESSION_TTL: "${GM_API_SESSION_TTL:-8h}"
+      JWT_SECRET: "${GM_API_JWT_SECRET:?set GM_API_JWT_SECRET}"
+      CORS_ORIGINS: "${GM_API_CORS_ORIGINS:-*}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      MSSQL_URL: "${GM_API_MSSQL_URL:?set GM_API_MSSQL_URL}"
+      PAY_SYS_TARGET: "paysys:5002"
+      S3RELAY_TARGET: "${GM_API_S3RELAY_TARGET:-10.211.55.4:5003}"
+      HEAVEN_TABLE_PATH: "/etc/api-gateway/heaven_table.bin"
+      HEAVEN_SERVER_NAME: "gm_api"
+      HEAVEN_SERVER_PASSWORD: "${GM_API_HEAVEN_PASSWORD:?set GM_API_HEAVEN_PASSWORD}"
+      HEAVEN_IDENTITY: "000C-294A-6145"
+      GM_API_HEAVEN_ACTIONS: "${GM_API_HEAVEN_ACTIONS:-0}"
+      LEGACY_GM_ACTIONS: "${LEGACY_GM_ACTIONS:-1}"
+      LEGACY_GM_TARGET: "${LEGACY_GM_TARGET:-10.211.55.2:19090}"
+    depends_on:
+      mssql:
+        condition: service_healthy
+      paysys:
+        condition: service_healthy
+      s3relay_ref:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      default: {}
+      gateway_lan:
+        ipv4_address: 10.211.55.5
+    read_only: true
+    volumes:
+      - ./config/heaven_table.bin:/etc/api-gateway/heaven_table.bin:ro
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  gateway_lan:
+    name: vltk_pay_gateway_lan
+    external: true

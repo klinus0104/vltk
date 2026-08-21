@@ -453,7 +453,7 @@ public:
             "ISNULL(DATEDIFF(second, GETDATE(), h.dEndDate),0) "
             "FROM Account_Info a "
             "LEFT JOIN Account_Habitus h ON a.cAccName=h.cAccName "
-            "WHERE a.cAccName='" + escaped + "'";
+            "WHERE a.cAccName='" + escaped + "' AND ISNULL(a.bIsBanned,0)=0";
 
         char db_password[65]{};
         DBINT ext_point = 0;
@@ -736,6 +736,13 @@ private:
         std::string escaped_password = sql_escape(password);
 
         DBINT current_client = 0;
+        DBINT banned = 0;
+        if (db_select_int(db_,
+                "select ISNULL(bIsBanned,0) from Account_info where (cAccName = '" + escaped_account + "')",
+                banned) && banned != 0) {
+            result.n_return = 3;
+            return result;
+        }
         if (db_select_int(db_,
                 "select iClientID from Account_info where (cAccName = '" + escaped_account + "')",
                 current_client) &&

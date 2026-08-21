@@ -1,0 +1,3 @@
+[submodule "jx1-api-gateway"]
+	path = jx1-api-gateway
+	url = https://github.com/klinus0104/jx1-api-gateway.git
