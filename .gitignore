@@ -34,6 +34,7 @@ Release/
 # Original executables and binary references
 *.exe
 *.bin
+!/config/heaven_table.bin
 *.elf
 *.dump
 *.core
